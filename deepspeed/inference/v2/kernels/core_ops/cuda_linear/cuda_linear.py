@@ -10,7 +10,7 @@ from ....logging import inference_logger
 from deepspeed.ops.op_builder import InferenceCoreBuilder
 from ... import DSKernelBase
 
-from quant_matmul import quant_matmul_fn
+#from quant_matmul import quant_matmul_fn
 
 class CUDAWf6Af16Linear(DSKernelBase):
     """
@@ -184,7 +184,7 @@ class CUDAWf6Af16Linear(DSKernelBase):
         # TODO: add a more general heuristic to determine the split-K.
         split_k = 1
         SplitK_Dict = {15360:3, 27648:2, 5120:10, 10240:5, 57344:7, 8192:6, 21504:5, 7168:7, 28672:7}
-        split_k = SplitK_Dict[M];
+        split_k = SplitK_Dict[out_channels]
         if(N>128):
             split_k = 1
 
