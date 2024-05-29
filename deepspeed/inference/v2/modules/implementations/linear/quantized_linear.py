@@ -169,14 +169,20 @@ class QuantizedWf6Af16Linear(DSLinearBase):
         if param.ndim == 1:  # bias, do nothing
             return InferenceParameter.initialize(param)
 
-        quantized_fake_fp6, scales = self.quantizer(param, num_bits=6, exp_bits=3)
+        #quantized_fake_fp6, scales = self.quantizer(param, num_bits=6, exp_bits=3) HAOJUN
+        quantized_fake_fp6 = torch.zeros_like(param)
+        scales             = torch.zeros((self.out_channels), dtype=torch.float16, device=param.device)
 
         # This is for debugging, will delete before release.
         assert (quantized_fake_fp6.dtype == torch.float16)
         assert quantized_fake_fp6.shape[0] == self.out_channels
         assert scales.numel() == self.out_channels
 
-        weights_2bit, weights_4bit = self.preprocess_weight(quantized_fake_fp6)
+        #weights_2bit, weights_4bit = self.preprocess_weight(quantized_fake_fp6)
+        #weights_2bit = torch.zeros((self.in_channels*self.out_channels*2//8,), dtype=torch.uint8, device=param.device)
+        #weights_4bit = torch.zeros((self.in_channels*self.out_channels*4//8,), dtype=torch.uint8, device=param.device)
+        weights_2bit = torch.zeros((self.out_channels*8//8, self.in_channels),  dtype=torch.int8, device=param.device)
+        weights_4bit = torch.zeros((1,),                                        dtype=torch.uint8, device=param.device)
 
         return InferenceParameter.initialize(weights_2bit, weights_4bit=weights_4bit, scales=scales)
 

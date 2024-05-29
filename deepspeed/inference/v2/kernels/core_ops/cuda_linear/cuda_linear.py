@@ -10,6 +10,7 @@ from ....logging import inference_logger
 from deepspeed.ops.op_builder import InferenceCoreBuilder
 from ... import DSKernelBase
 
+from quant_matmul import quant_matmul_fn
 
 class CUDAWf6Af16Linear(DSKernelBase):
     """
@@ -180,21 +181,21 @@ class CUDAWf6Af16Linear(DSKernelBase):
 
         if out_channels % 256 != 0 or in_channels % 64 != 0:
             raise ValueError("The out and in channel should be multiple of 256 and 64 respectively.")
-
+        """
         # TODO: add a more general heuristic to determine the split-K.
-        split_k = -1  # not initialized
-        if tokens <= 768:
-            # Try to find the split-K from the pre-profiled map.
-            tokens_chunk_id = (tokens - 1) // 64
-            split_k = self.split_k_map[tokens_chunk_id].get(out_channels, -1)
-        if split_k == -1:
+        split_k = 1
+        SplitK_Dict = {15360:3, 27648:2, 5120:10, 10240:5, 57344:7, 8192:6, 21504:5, 7168:7, 28672:7}
+        split_k = SplitK_Dict[M];
+        if(N>128):
             split_k = 1
-            inference_logger().warning(
-                f"The split-K setting may be suboptimal for shape {tokens}x{in_channels}x{out_channels}...")
 
         workspace = self.get_workspace(out_channels, tokens, in_channels, split_k, torch.float, hidden_states.device)
         self.kernel(output, hidden_states, weights_2bit, weights_4bit, scale, workspace, out_channels, tokens,
                     in_channels, split_k)
+        """
+        #x                   = torch.zeros((tokens, in_channels),        dtype=torch.float16,    device=scale.device)
+        #processed_weight    = torch.zeros((out_channels, in_channels),  dtype=torch.int8,       device=scale.device)
+        output = quant_matmul_fn(hidden_states, weights_2bit, bits=8)
 
     def get_workspace(self, out_channels: int, tokens: int, in_channels: int, split_k: int, dtype,
                       device) -> torch.Tensor:
