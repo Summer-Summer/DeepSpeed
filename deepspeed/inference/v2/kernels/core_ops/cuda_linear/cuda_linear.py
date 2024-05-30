@@ -185,7 +185,7 @@ class CUDAWf6Af16Linear(DSKernelBase):
         split_k = 1
         SplitK_Dict = {15360:3, 27648:2, 5120:10, 10240:5, 57344:7, 8192:6, 21504:5, 7168:7, 28672:7}
         split_k = SplitK_Dict[out_channels]
-        if(N>128):
+        if(tokens>128):
             split_k = 1
 
         workspace = self.get_workspace(out_channels, tokens, in_channels, split_k, torch.float, hidden_states.device)
